@@ -126,17 +126,11 @@ DDPM's reverse process starts from random Gaussian noise and adds stochastic noi
 ```bibtex
 @misc{gangatkar2026vla,
   title={When Diffusion Policy Hurts: Adaptive Selection Between DDPM and Direct Regression for Robotic Manipulation},
-  author={Gangatkar, Yashas K and Team B25\_86},
+  author={Gangatkar, Yashas K},
   year={2026},
-  howpublished={CoRE-SoET Research Initiative, Sapthagiri NPS University},
-  url={https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy}
+  howpublished={\url{https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy}}
 }
 ```
-
-## Team
-
-**Team B25_86** — CoRE-SoET Research Initiative, Sapthagiri NPS University
-- Topic: T036 — AI-Based Autonomous Robot for Industrial Material Handling
 
 ## License
 

@@ -1,7 +1,6 @@
 # When Diffusion Policy Hurts: Adaptive Selection Between DDPM and Direct Regression for Robotic Manipulation
 
-**Authors:** Yashas K Gangatkar¹, [Co-authors TBD]  
-**Affiliation:** ¹Sapthagiri NPS University, CoRE–SoET Research Initiative, Team B25_86
+**Authors:** Yashas K Gangatkar  
 
 ---
 
