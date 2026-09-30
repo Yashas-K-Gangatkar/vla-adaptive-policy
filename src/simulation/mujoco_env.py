@@ -152,7 +152,7 @@ class PushBlockVLAEnv(gym.Env):
     IMG_SIZE = 224  # standard for CLIP / ViT-B
     MAX_TORQUE = 25.0  # N·m — kept for backward compat (used by older code)
     MAX_ANGLE = 1.5  # radians — max joint angle (~86°); action in [-1, 1] -> [-1.5, 1.5] rad
-    ZONE_RADIUS = 0.05  # meters — block "in zone" threshold
+    ZONE_RADIUS = 0.15  # meters — block "in zone" threshold
 
     def __init__(
         self,
