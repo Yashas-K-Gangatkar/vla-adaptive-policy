@@ -1,0 +1,32 @@
+# VLA Robotics Product - Requirements
+# Tested on Mac M5 / Apple Silicon with Python 3.13+ (3.14 also works)
+# Linux x86_64 with NVIDIA GPU is also supported via CUDA.
+
+# Core deep learning
+torch>=2.4.0
+torchvision>=0.19.0  # for image preprocessing helpers
+
+# Pretrained backbones (HuggingFace) — ~600MB download on first run
+transformers>=4.44.0
+diffusers>=0.30.0
+accelerate>=0.34.0    # needed for diffusers + transformers memory efficiency
+safetensors>=0.4.0
+
+# Simulation
+mujoco>=3.1.0
+gymnasium>=0.29.0
+
+# Data
+h5py>=3.11.0          # HDF5 trajectory storage (chunked + gzip)
+pandas>=2.0.0         # manifest + tabular helpers
+numpy>=1.26.0
+
+# Visualization
+plotly>=5.23.0        # interactive 3D HTML trajectory plots
+matplotlib>=3.8.0     # static PNG fallback for paper figures
+
+# Logging (optional — falls back to stdout if not installed)
+wandb>=0.17.0         # set WANDB_MODE=offline to log locally without account
+
+# Dev / formatting (optional)
+ruff>=0.5.0
