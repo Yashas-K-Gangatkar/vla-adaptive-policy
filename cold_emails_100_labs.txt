@@ -1,0 +1,651 @@
+COLD EMAIL LIST — 100 Robotics Labs
+=====================================
+
+HOW TO USE:
+1. Find the email address on each lab's website (look for "People" → PhD students → email)
+2. Copy the email text below
+3. Attach VLA_Paper_Final.pdf
+4. Send from a professional email (not a personal one)
+5. Send 5-10 per day (not all at once — avoid spam filters)
+
+EMAIL TEMPLATE (for labs without a specific name):
+-------------------------------------------------
+
+Subject: Open-source VLA with adaptive DDPM/MSE selection — 100% on deterministic tasks
+
+Hi [LAB NAME] team,
+
+I built an open-source VLA pipeline with an Adaptive Policy Selector that automatically chooses between DDPM and MSE based on action distribution modality. Verified on 2 tasks with 4 ablation studies: 100% success on deterministic, 40% on multi-modal. Code + paper: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+I'm looking for a summer 2027 internship and would love to contribute to your lab's work. Paper attached.
+
+Best,
+Yashas K Gangatkar
+github.com/Yashas-K-Gangatkar
+
+
+================================================================================
+TIER 1: SWISS LABS (15 labs — HIGHEST PRIORITY for 2 Cr goal)
+================================================================================
+
+1. ETH Zurich — Robot Learning Lab (Prof. Aude Billard)
+URL: http://lasa.epfl.ch/
+Email: Look for PhD students on the People page
+Subject: DDPM underperforms MSE by 60+ points on deterministic manipulation — adaptive selector
+
+Hi Billard Lab,
+
+I noticed your work on robot learning from demonstration and built an open-source VLA pipeline where DDPM diffusion policy underperforms direct MSE regression by 60+ percentage points on deterministic manipulation tasks. I created an Adaptive Policy Selector that automatically switches between them based on action distribution modality (100% vs 0-15% on deterministic, 40% vs 30% on multi-modal). Code + paper: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+Looking for a summer 2027 internship. Paper attached.
+
+Best,
+Yashas K Gangatkar
+
+---
+
+2. ETH Zurich — LEGP Lab (Prof. Marco Hutter)
+URL: https://rsl.ethz.ch/
+Subject: When diffusion policy hurts — adaptive DDPM/MSE selection for manipulation
+
+Hi RSL team,
+
+I built a VLA pipeline with CLIP + FiLM denoiser that achieves 100% success on language-conditioned reach-to-target using adaptive policy selection (MSE for deterministic tasks, DDPM for multi-modal). 4 ablation studies included. Your work on legged robots and manipulation at RSL inspired this direction. Code: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+Summer 2027 internship interest. Paper attached.
+
+Best,
+Yashas K Gangatkar
+
+---
+
+3. ETH Zurich — Autonomous Systems Lab (Prof. Roland Siegwart)
+URL: https://asl.ethz.ch/
+Subject: Adaptive VLA policy selection — 100% on deterministic manipulation
+
+Hi ASL team,
+
+I built an open-source VLA with an adaptive selector that automatically chooses between DDPM and MSE. On deterministic manipulation: MSE=100%, DDPM=0-15%. On multi-modal: DDPM=40%, MSE=30%. 4 ablation studies. Code + paper: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+Summer 2027 internship. Paper attached.
+
+Best,
+Yashas K Gangatkar
+
+---
+
+4. EPFL — Biorobotics Lab (Prof. Dario Floreano)
+URL: https://biorob.epfl.ch/
+Subject: Open-source VLA with adaptive DDPM/MSE — 100% deterministic, 40% multi-modal
+
+Hi Biorobotics Lab,
+
+I built a VLA pipeline with CLIP + cross-attention + FiLM denoiser (2.4M trainable params) and an Adaptive Policy Selector that auto-selects MSE or DDPM based on action distribution modality. 2 tasks verified + 4 ablations. Code: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+Summer 2027 internship. Paper attached.
+
+Best,
+Yashas K Gangatkar
+
+---
+
+5. EPFL — Learning Algorithms and Systems (Prof. Billard, also at EPFL)
+URL: http://lasa.epfl.ch/
+Subject: Adaptive policy selection: when DDPM hurts on deterministic manipulation
+
+Hi LASA team,
+
+I built a VLA pipeline showing DDPM underperforms MSE by 60-85 percentage points on deterministic manipulation. My Adaptive Policy Selector auto-selects the optimal method (MSE for deterministic=100%, DDPM for multi-modal=40%). Code: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+Summer 2027 internship. Paper attached.
+
+Best,
+Yashas K Gangatkar
+
+---
+
+6. Disney Research Zurich
+URL: https://research.disneyssl.com/disney-research-zurich/
+Subject: VLA pipeline with adaptive DDPM/MSE — code + paper on GitHub
+
+Hi Disney Research,
+
+I built an open-source VLA pipeline with CLIP vision + cross-attention + adaptive policy selection (DDPM vs MSE). 100% success on deterministic tasks, 40% on multi-modal. 4 ablation studies including noise schedule, diffusion steps, threshold, and CLIP frozen/unfrozen. Code: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+Summer 2027 internship. Paper attached.
+
+Best,
+Yashas K Gangatkar
+
+---
+
+7. ABB Robotics Research
+URL: https://new.abb.com/products/robotics
+Subject: Adaptive VLA for industrial manipulation — 100% success on reach-to-target
+
+Hi ABB Robotics Research,
+
+I built a VLA pipeline for industrial material handling (T036) with an Adaptive Policy Selector that auto-chooses between DDPM and MSE. Results: 100% on deterministic, 40% on multi-modal manipulation. The task is language-conditioned reach-to-target with 3 colored zones (ISO 2768 tolerance). Code: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+Summer 2027 internship. Paper attached.
+
+Best,
+Yashas K Gangatkar
+
+---
+
+8. ANYbotics (Zurich startup, quadruped robots)
+URL: https://www.anybotics.com/
+Subject: Open-source VLA with adaptive DDPM/MSE — verified on MuJoCo manipulation
+
+Hi ANYbotics team,
+
+I built a VLA pipeline with CLIP + adaptive policy selection (DDPM vs MSE). 100% success on deterministic manipulation, 40% on multi-modal. Interested in extending this to quadruped locomotion tasks. Code: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+Summer 2027 internship. Paper attached.
+
+Best,
+Yashas K Gangatkar
+
+---
+
+9. University of Zurich — Robotics and Perception Group (Prof. Scaramuzza)
+URL: https://rpg.ifi.uzh.ch/
+Subject: Adaptive VLA — when DDPM hurts on deterministic tasks
+
+Hi RPG team,
+
+I built a VLA pipeline showing DDPM underperforms MSE by 60+ points on deterministic manipulation. Adaptive selector auto-chooses the optimal method. 4 ablation studies. Code: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+Summer 2027 internship. Paper attached.
+
+Best,
+Yashas K Gangatkar
+
+---
+
+10. ETH Zurich — Agile & Dexterous Robotics (Prof. D'Andrea)
+URL: https://www.idsc.ethz.ch/
+Subject: VLA with adaptive DDPM/MSE selection — code + 4 ablation studies
+
+Hi IDSC team,
+
+I built a VLA pipeline with adaptive policy selection (DDPM vs MSE). On deterministic tasks: MSE=100%, DDPM=0-15%. On multi-modal: DDPM=40%, MSE=30%. Selector auto-detects task modality from action distribution. Code: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+Summer 2027 internship. Paper attached.
+
+Best,
+Yashas K Gangatkar
+
+---
+
+11. Wyss Center Zurich
+URL: https://www.wysscenter.ch/
+Subject: Open-source VLA with adaptive policy selection — 100% deterministic
+
+Hi Wyss Center,
+
+I built a VLA pipeline with CLIP + adaptive DDPM/MSE selection. 100% success on deterministic manipulation, 40% on multi-modal. 4 ablation studies. Code: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+Summer 2027 internship. Paper attached.
+
+Best,
+Yashas K Gangatkar
+
+---
+
+12. ETH Zurich — AI Center
+URL: https://ai.ethz.ch/
+Subject: Adaptive VLA: when to use DDPM vs MSE — automatic selection
+
+Hi ETH AI Center,
+
+I built a VLA pipeline with an adaptive selector that auto-chooses between DDPM and MSE diffusion/regression based on action distribution modality. Verified: 100% (deterministic) vs 40% (multi-modal). Code: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+Summer 2027 internship. Paper attached.
+
+Best,
+Yashas K Gangatkar
+
+---
+
+13. Empa — Robotics & Manufacturing
+URL: https://www.empa.ch/
+Subject: VLA for industrial material handling — adaptive policy selection
+
+Hi Empa Robotics,
+
+I built a VLA pipeline for industrial material handling with adaptive DDPM/MSE selection. 100% success on deterministic reach-to-target (ISO 2768 tolerance). 4 ablation studies. Code: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+Summer 2027 internship. Paper attached.
+
+Best,
+Yashas K Gangatkar
+
+---
+
+14. FHNW — Institute of Robotics
+URL: https://www.fhnw.ch/
+Subject: Open-source VLA pipeline — 100% on deterministic manipulation
+
+Hi FHNW Robotics,
+
+I built a VLA pipeline with CLIP + adaptive policy selection (DDPM vs MSE). 100% on deterministic, 40% on multi-modal manipulation. Code: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+Summer 2027 internship. Paper attached.
+
+Best,
+Yashas K Gangatkar
+
+---
+
+15. ZHAW — Center for Robotics
+URL: https://www.zhaw.ch/
+Subject: Adaptive VLA with DDPM/MSE selection — code on GitHub
+
+Hi ZHAW Robotics,
+
+I built a VLA pipeline with adaptive DDPM/MSE policy selection. The selector auto-detects task modality and chooses the optimal method. 100% on deterministic, 40% on multi-modal. Code: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+Summer 2027 internship. Paper attached.
+
+Best,
+Yashas K Gangatkar
+
+
+================================================================================
+TIER 2: EUROPEAN LABS (25 labs)
+================================================================================
+
+16. TUM — Robotics Lab (Munich, Germany)
+URL: https://www.mec.tum.de/en/mec
+Subject: Adaptive VLA — DDPM vs MSE on manipulation tasks
+
+17. Max Planck Institute — Intelligent Systems (Tübingen, Germany)
+URL: https://www.is.mpg.de/
+Subject: When diffusion policy hurts — adaptive selection
+
+18. University of Freiburg — Robotics (Germany)
+URL: https://www.ai.uni-freiburg.de/
+Subject: VLA with adaptive DDPM/MSE — 100% on deterministic tasks
+
+19. KIT — Karlsruhe Institute of Technology (Germany)
+URL: https://www.kit.edu/
+Subject: Adaptive policy selection for manipulation — code on GitHub
+
+20. TU Berlin — Robotics (Germany)
+URL: https://www.robotics.tu-berlin.de/
+Subject: VLA pipeline: when DDPM underperforms MSE
+
+21. University of Bonn — Computer Vision (Germany)
+URL: https://www.vision.informatik.uni-bonn.de/
+Subject: Open-source VLA with CLIP + adaptive DDPM/MSE
+
+22. DLR — German Aerospace Center, Robotics (Oberpfaffenhofen)
+URL: https://www.dlr.de/en/
+Subject: Adaptive VLA for manipulation — 100% deterministic
+
+23. Bosch Center for AI (Renningen, Germany)
+URL: https://www.bosch-ai.com/
+Subject: VLA with adaptive policy selection — 4 ablation studies
+
+24. Fraunhofer IPA — Robotics (Stuttgart, Germany)
+URL: https://www.ipa.fraunhofer.de/
+Subject: Industrial VLA with adaptive DDPM/MSE selection
+
+25. University of Stuttgart — Cyber-Physical Systems (Germany)
+URL: https://www.ipvs.uni-stuttgart.de/
+Subject: Adaptive VLA: automatic DDPM/MSE selection
+
+26. INRIA Paris (France)
+URL: https://www.inria.fr/en
+Subject: When diffusion policy hurts — adaptive selection
+
+27. INRIA Grenoble (France)
+URL: https://inria.fr/en/centre-inria-grenoble
+Subject: VLA with adaptive DDPM/MSE — code on GitHub
+
+28. Sorbonne University — Robotics (Paris, France)
+URL: https://www.sorbonne-universite.fr/
+Subject: Adaptive policy selection for manipulation
+
+29. École Polytechnique — AI (Paris, France)
+URL: https://www.polytechnique.edu/
+Subject: Open-source VLA with CLIP + adaptive selector
+
+30. Mines Paris — Robotics (France)
+URL: https://www.minesparis.psl.eu/
+Subject: VLA: DDPM underperforms MSE on deterministic tasks
+
+31. Imperial College London — Dyson Robot Learning (UK)
+URL: https://www.imperial.ac.uk/dyson-robot-learning-lab/
+Subject: Adaptive VLA — when DDPM hurts on deterministic manipulation
+
+32. University of Oxford — Applied AI Lab (UK)
+URL: https://www.robots.ox.ac.uk/
+Subject: VLA with adaptive DDPM/MSE selection — 100% deterministic
+
+33. UCL — Robotics (London, UK)
+URL: https://www.ucl.ac.uk/robotics/
+Subject: Open-source VLA with adaptive policy selection
+
+34. University of Edinburgh — Robotics (UK)
+URL: https://www.ed.ac.uk/informatics/research/robotics
+Subject: When diffusion policy hurts — adaptive selector
+
+35. University of Cambridge — AI Lab (UK)
+URL: https://www.cam.ac.uk/
+Subject: Adaptive VLA: DDPM vs MSE — automatic selection
+
+36. TU Delft — Robotics (Netherlands)
+URL: https://www.tudelft.nl/3me
+Subject: VLA with CLIP + adaptive DDPM/MSE — code on GitHub
+
+37. University of Amsterdam — QUVA Lab (Netherlands)
+URL: https://www.uva.nl/
+Subject: Adaptive policy selection for manipulation tasks
+
+38. KU Leuven — Robotics (Belgium)
+URL: https://www.kuleuven.be/
+Subject: VLA: when DDPM underperforms MSE — adaptive selector
+
+39. DTU — Technical University of Denmark (Copenhagen)
+URL: https://www.dtu.dk/
+Subject: Open-source VLA with adaptive DDPM/MSE
+
+40. Chalmers University — Robotics (Gothenburg, Sweden)
+URL: https://www.chalmers.se/
+Subject: VLA pipeline with adaptive policy selection
+
+
+================================================================================
+TIER 3: US LABS (30 labs)
+================================================================================
+
+41. Stanford — IRIS Lab (Prof. Chelsea Finn)
+URL: https://irislab.stanford.edu/
+Subject: Adaptive VLA — when DDPM hurts on deterministic tasks (like your DP paper)
+
+42. Stanford — SAIL (Stanford AI Lab)
+URL: https://ai.stanford.edu/
+Subject: VLA with adaptive DDPM/MSE — 100% deterministic, 40% multi-modal
+
+43. UC Berkeley — BAIR
+URL: https://bair.berkeley.edu/
+Subject: When diffusion policy hurts — adaptive selection (code on GitHub)
+
+44. CMU — Robotics Institute
+URL: https://www.ri.cmu.edu/
+Subject: Adaptive VLA: automatic DDPM/MSE selection for manipulation
+
+45. MIT — CSAIL
+URL: https://www.csail.mit.edu/
+Subject: VLA with adaptive policy selection — 4 ablation studies
+
+46. Georgia Tech — Robot Learning Lab
+URL: https://www.cc.gatech.edu/
+Subject: When DDPM underperforms MSE — adaptive selector
+
+47. University of Washington — Robotics
+URL: https://www.washington.edu/
+Subject: Open-source VLA with adaptive DDPM/MSE
+
+48. USC — Robotics (Los Angeles)
+URL: https://robotics.usc.edu/
+Subject: Adaptive VLA pipeline — code + paper on GitHub
+
+49. Princeton — Robotics
+URL: https://www.princeton.edu/
+Subject: VLA: DDPM vs MSE — automatic selection based on action modality
+
+50. Columbia University — Robotics
+URL: https://robotics.columbia.edu/
+Subject: When diffusion policy hurts — adaptive DDPM/MSE
+
+51. UT Austin — Robot Learning (Prof. Scott Niekum)
+URL: https://www.cs.utexas.edu/
+Subject: Adaptive VLA with CLIP + policy selection
+
+52. NVIDIA Research — Robotics
+URL: https://www.nvidia.com/en-us/research/
+Subject: VLA with adaptive DDPM/MSE — 100% on deterministic manipulation
+
+53. Google DeepMind — Robotics
+URL: https://www.deepmind.com/
+Subject: When DDPM underperforms MSE — adaptive selector
+
+54. Physical Intelligence (π0, San Francisco)
+URL: https://www.physicalintelligence.company/
+Subject: Adaptive VLA: automatic DDPM/MSE selection (like your π0 work)
+
+55. Toyota Research Institute
+URL: https://www.tri.global/
+Subject: VLA with adaptive policy selection — 4 ablation studies
+
+56. Boston Dynamics — AI
+URL: https://www.bostondynamics.com/
+Subject: Open-source VLA with adaptive DDPM/MSE
+
+57. Skydio — Research
+URL: https://www.skydio.com/
+Subject: Adaptive VLA — when diffusion policy hurts
+
+58. Northeastern University — Robotics
+URL: https://www.northeastern.edu/
+Subject: VLA with CLIP + adaptive DDPM/MSE selection
+
+59. University of Michigan — Robotics
+URL: https://robotics.umich.edu/
+Subject: Adaptive policy selection for manipulation
+
+60. University of Pennsylvania — GRASP Lab
+URL: https://www.grasp.upenn.edu/
+Subject: When DDPM underperforms MSE — adaptive VLA
+
+61. Harvard — Wyss Institute (Boston)
+URL: https://wyss.harvard.edu/
+Subject: VLA with adaptive DDPM/MSE — 100% deterministic
+
+62. Cornell — Robotics
+URL: https://www.cornell.edu/
+Subject: Open-source VLA with adaptive policy selection
+
+63. Johns Hopkins — Robotics
+URL: https://www.cs.jhu.edu/
+Subject: Adaptive VLA: DDPM vs MSE — automatic selection
+
+64. UC San Diego — Robotics
+URL: https://robotics.ucsd.edu/
+Subject: When diffusion policy hurts — adaptive selector
+
+65. University of Illinois — Robotics
+URL: https://robotics.illinois.edu/
+Subject: VLA with CLIP + adaptive DDPM/MSE — code on GitHub
+
+66. Carnegie Mellon — AIR Lab
+URL: https://www.cmu.edu/
+Subject: Adaptive VLA pipeline — 4 ablation studies
+
+67. NASA JPL — Robotics
+URL: https://www.jpl.nasa.gov/
+Subject: VLA with adaptive policy selection for manipulation
+
+68. Rice University — Robotics
+URL: https://www.rice.edu/
+Subject: When DDPM underperforms MSE — adaptive selector
+
+69. Oregon State — Robotics
+URL: https://robotics.oregonstate.edu/
+Subject: Open-source VLA with adaptive DDPM/MSE
+
+70. UC Berkeley — People's Lab
+URL: https://people.eecs.berkeley.edu/
+Subject: Adaptive VLA: automatic DDPM/MSE based on action modality
+
+
+================================================================================
+TIER 4: ASIA & AUSTRALIA (15 labs)
+================================================================================
+
+71. University of Tokyo — Robotics (Japan)
+URL: https://www.robot.t.u-tokyo.ac.jp/
+Subject: VLA with adaptive DDPM/MSE — 100% on deterministic
+
+72. ETH Tokyo — Robotics (Japan)
+URL: (same as UTokyo)
+Subject: Adaptive VLA pipeline — code on GitHub
+
+73. KAIST — Robotics (Daejeon, South Korea)
+URL: https://www.kaist.ac.kr/
+Subject: When diffusion policy hurts — adaptive selector
+
+74. Seoul National University — AI (South Korea)
+URL: https://www.snu.ac.kr/
+Subject: VLA with CLIP + adaptive policy selection
+
+75. Tsinghua University — Robotics (Beijing, China)
+URL: https://www.tsinghua.edu.cn/
+Subject: Adaptive VLA: DDPM vs MSE — automatic selection
+
+76. Shanghai Jiao Tong — Robotics (China)
+URL: https://www.sjtu.edu.cn/
+Subject: VLA with adaptive DDPM/MSE — 4 ablation studies
+
+77. NUS — National University of Singapore
+URL: https://www.nus.edu.sg/
+Subject: When DDPM underperforms MSE — adaptive VLA
+
+78. NTU — Nanyang Technological (Singapore)
+URL: https://www.ntu.edu.sg/
+Subject: Open-source VLA with adaptive policy selection
+
+79. IIT Bombay — Robotics (India)
+URL: https://www.iitb.ac.in/
+Subject: VLA with adaptive DDPM/MSE — 100% deterministic manipulation
+
+80. IISc Bangalore — Robotics (India)
+URL: https://www.iisc.ac.in/
+Subject: Adaptive VLA pipeline — code + paper on GitHub
+
+81. IIT Madras — Robotics (India)
+URL: https://www.iitm.ac.in/
+Subject: When diffusion policy hurts — adaptive DDPM/MSE
+
+82. Indian Institute of Technology Delhi — AI
+URL: https://www.iitd.ac.in/
+Subject: VLA with CLIP + adaptive policy selection
+
+83. University of Melbourne — Robotics (Australia)
+URL: https://www.unimelb.edu.au/
+Subject: Adaptive VLA: DDPM vs MSE — automatic selection
+
+84. University of Sydney — Robotics (Australia)
+URL: https://www.sydney.edu.au/
+Subject: Open-source VLA with adaptive DDPM/MSE
+
+85. QUT — Queensland University of Technology (Australia)
+URL: https://www.qut.edu.au/
+Subject: VLA pipeline with adaptive policy selection
+
+
+================================================================================
+TIER 5: INDUSTRY & STARTUPS (15 labs)
+================================================================================
+
+86. OpenAI — Robotics Team
+URL: https://openai.com/
+Subject: Adaptive VLA — when DDPM hurts on deterministic manipulation
+
+87. Meta AI — Robotics
+URL: https://ai.meta.com/
+Subject: VLA with adaptive DDPM/MSE selection — code on GitHub
+
+88. Amazon — Robotics Research
+URL: https://www.amazon.science/
+Subject: Adaptive VLA for manipulation — 100% deterministic
+
+89. Microsoft Research — Robotics
+URL: https://www.microsoft.com/en-us/research/
+Subject: VLA with adaptive policy selection — 4 ablation studies
+
+90. Apptronik — Humanoid Robotics (Austin, TX)
+URL: https://apptronik.com/
+Subject: VLA with CLIP + adaptive DDPM/MSE — 100% on deterministic
+
+91. Figure AI — Humanoid Robotics
+URL: https://www.figure.ai/
+Subject: Adaptive VLA pipeline — when DDPM hurts
+
+92. 1X Technologies — Humanoid Robotics (Norway)
+URL: https://www.1x.tech/
+Subject: VLA with adaptive DDPM/MSE — code on GitHub
+
+93. Agility Robotics — Digit (Oregon)
+URL: https://agilityrobotics.com/
+Subject: Adaptive VLA for manipulation — 4 ablation studies
+
+94. Sanctuary AI — Robotics (Vancouver)
+URL: https://sanctuary.ai/
+Subject: VLA with adaptive policy selection — 100% deterministic
+
+95. Reframe Robotics — Manipulation
+URL: https://reframerobotics.com/
+Subject: When DDPM underperforms MSE — adaptive selector
+
+96. Covariant — AI Robotics (San Francisco)
+URL: https://covariant.ai/
+Subject: VLA with CLIP + adaptive DDPM/MSE — code on GitHub
+
+97. Path Robotics — Manufacturing (Columbus, OH)
+URL: https://www.pathrobotics.com/
+Subject: Adaptive VLA for industrial manipulation — 100% deterministic
+
+98. Symbotic — Warehouse Robotics
+URL: https://www.symbotic.com/
+Subject: VLA with adaptive policy selection — 4 ablation studies
+
+99. Gecko Robotics — Inspection
+URL: https://www.geckorobotics.com/
+Subject: When diffusion policy hurts — adaptive DDPM/MSE
+
+100. Aura Robotics — Manipulation
+URL: https://aurarobotics.com/
+Subject: Adaptive VLA: DDPM vs MSE — automatic selection based on action modality
+
+
+================================================================================
+NOTES:
+================================================================================
+1. For labs 16-100, use this template (replace [LAB NAME]):
+
+Subject: [Copy the subject from the list above]
+
+Hi [LAB NAME] team,
+
+I built an open-source VLA pipeline with an Adaptive Policy Selector that automatically chooses between DDPM and MSE based on action distribution modality. Verified on 2 tasks with 4 ablation studies: 100% success on deterministic, 40% on multi-modal. Code + paper: https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy
+
+I'm looking for a summer 2027 internship and would love to contribute to your lab's work. Paper attached.
+
+Best,
+Yashas K Gangatkar
+github.com/Yashas-K-Gangatkar
+
+2. FINDING EMAIL ADDRESSES:
+   - Go to each lab's URL
+   - Look for "People" or "Team" page
+   - Find PhD students or postdocs (NOT professors — they won't reply)
+   - Use their institutional email
+
+3. TIMING:
+   - Send 5-10 emails per day (Oct 1-15: 100 emails in 10-15 days)
+   - Best time to send: Tuesday-Thursday, 9-11 AM local time
+   - Follow up after 1 week if no reply (one follow-up only)
+
+4. PRIORITIZE:
+   - Tier 1 (Swiss) first — these are your 2 Cr target
+   - Tier 2 (Europe) second — networking for ETH/EPFL
+   - Tier 3+ (US, Asia) third — backup options
+
+5. ATTACH:
+   - VLA_Paper_Final.pdf (always attach — emails with attachments get opened more)
+   - Don't link to the PDF — attach it directly
