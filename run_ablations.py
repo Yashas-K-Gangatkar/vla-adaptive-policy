@@ -203,7 +203,7 @@ def main():
 
     # Save results to CSV
     with open(RESULTS_CSV, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["ablation", "param", "value",
+        writer = csv.DictWriter(f, fieldnames=["ablation", "param", "value", "selected_mode",
                                                 "success_rate", "avg_distance", "elapsed_s"])
         writer.writeheader()
         for r in all_results:
