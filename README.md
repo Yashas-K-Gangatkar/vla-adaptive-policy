@@ -6,20 +6,45 @@
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Python](https://img.shields.io/badge/python-3.13%2B-yellow)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.14%2B-red)
-![Success](https://img.shields.io/badge/success%20rate-100%25-brightgreen)
+![Success](https://img.shields.io/badge/evaluated-2%20tasks-brightgreen)
 
 ## Overview
 
-An open-source Vision-Language-Action (VLA) pipeline that **automatically selects** between DDPM diffusion policy and direct MSE regression based on the action distribution's modality. On deterministic single-step manipulation tasks, direct MSE achieves **100% success** while DDPM achieves only **0-15%** — our Adaptive Policy Selector correctly identifies the task as deterministic and selects MSE.
+An open-source Vision-Language-Action (VLA) pipeline that **automatically selects** between DDPM diffusion policy and direct MSE regression based on the action distribution's modality. Evaluated on two tasks:
 
-## Key Results
+- **Deterministic** (1 valid action per instruction): MSE achieves **100%**, DDPM achieves **0-15%**
+- **Multi-modal** (2 valid actions per instruction): DDPM achieves **40%**, MSE achieves **30%**
 
-| Method | Success Rate (15cm) | Avg Distance |
-|--------|:-------------------:|:------------:|
-| DDPM (100 steps, 1 sample) | 0-5% | 42-49 cm |
-| DDPM (20-sample averaging) | 15% | 10-15 cm |
-| **Direct MSE (our selector)** | **100%** | **5.8-13 cm** |
-| Expert (Jacobian IK) | 100% | 4-8 mm |
+The Adaptive Policy Selector correctly identifies each task type and selects the method that maximizes success.
+
+## Key Results — The 2×2 Table
+
+| Task | Method | Success Rate | Avg Distance |
+|------|:------:|:------------:|:------------:|
+| Deterministic (1 zone) | DDPM | 0-15% | 42-49 cm |
+| Deterministic (1 zone) | **MSE** | **100%** | 5.8-13 cm |
+| Multi-modal (2 zones) | **DDPM** | **40%** | Variable |
+| Multi-modal (2 zones) | MSE | 30% | 5.8-17 cm |
+
+**The selector picks MSE for deterministic → 100%. The selector picks DDPM for multi-modal → 40%.**
+
+### MSE on Multi-modal: Breakdown
+
+| Color | Zones | MSE Success | Why |
+|-------|:-----:|:-----------:|-----|
+| Green | 1 (deterministic) | 6/6 = 100% | MSE predicts the single correct action |
+| Red | 2 (multi-modal) | 0/4 = 0% | MSE averages the two modes → misses both |
+| Blue | 2 (multi-modal) | 0/10 = 0% | Same — averages to middle |
+
+### DDPM on Multi-modal: Breakdown
+
+| Color | Zones | DDPM Success | Why |
+|-------|:-----:|:------------:|-----|
+| Green | 1 (deterministic) | 4/6 = 67% | DDPM works but some stochastic variance |
+| Red | 2 (multi-modal) | 1/4 = 25% | DDPM samples one of the two modes |
+| Blue | 2 (multi-modal) | 3/10 = 30% | DDPM samples one of the two modes |
+
+**Key insight:** MSE succeeds ONLY on deterministic episodes. DDPM succeeds on ALL colors. DDPM captures multi-modality; MSE collapses it to the mean.
 
 ## Novel Contribution: Adaptive Policy Selector
 
@@ -27,14 +52,15 @@ Nobody has published an automatic method for choosing between diffusion and regr
 
 1. Analyzes the training data's action distribution (grouped by instruction)
 2. Computes the standard deviation of expert actions per instruction
-3. If `max_std < 0.01` → task is deterministic → **use MSE** (deterministic, fast)
-4. If `max_std >= 0.01` → task is multimodal → **use DDPM** (stochastic, captures multi-modality)
+3. If `max_std < 0.01` → task is deterministic → **use MSE**
+4. If `max_std >= 0.01` → task is multimodal → **use DDPM**
 
-```python
-from src.utils.policy_selector import PolicySelector
-selector = PolicySelector(threshold=0.01)
-mode = selector.analyze(h5_paths)  # Returns "mse" or "ddpm"
-```
+### Selector Validation
+
+| Data Type | Action std | Selector Output | Correct? |
+|-----------|:----------:|:---------------:|:--------:|
+| Deterministic (1 zone per color) | 0.000 | MSE | ✅ |
+| Multi-modal (2 zones for red/blue) | 0.099 | DDPM | ✅ |
 
 ## Architecture
 
@@ -71,19 +97,18 @@ mode = selector.analyze(h5_paths)  # Returns "mse" or "ddpm"
 ## Quick Start
 
 ```bash
-# Clone
 git clone https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy.git
 cd vla-adaptive-policy
-
-# Setup
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 
-# Run the full pipeline
+# Task 1: Deterministic (selector chooses MSE)
 python -m src.train --collect-only --episodes 100 --max-steps 50
 python -m src.optimize --epochs 100 --batch-size 4 --no-wandb
 python -m src.train --evaluate --episodes 20 --max-steps 50 --checkpoint checkpoints/vla_final.pt
+
+# Task 2: Multi-modal (selector chooses DDPM)
+# See src/simulation/mujoco_env_multimodal.py for the multi-modal env
 ```
 
 ## File Structure
@@ -92,34 +117,24 @@ python -m src.train --evaluate --episodes 20 --max-steps 50 --checkpoint checkpo
 vla-adaptive-policy/
 ├── src/
 │   ├── simulation/
-│   │   └── mujoco_env.py          # 3-DOF arm + 3 colored zones (gym.Env)
+│   │   ├── mujoco_env.py              # Deterministic env (1 zone per color)
+│   │   └── mujoco_env_multimodal.py   # Multi-modal env (2 zones for red/blue)
 │   ├── models/
-│   │   └── vla_network.py          # CLIP + cross-attn + FiLM denoiser
+│   │   └── vla_network.py              # CLIP + cross-attn + FiLM denoiser (dual-mode)
 │   ├── utils/
-│   │   ├── data_logger.py          # HDF5 trajectory logging
-│   │   ├── plotter.py             # Plotly 3D trajectory visualization
-│   │   ├── scripted_expert.py     # Jacobian IK expert (100% success)
-│   │   └── policy_selector.py     # ⭐ ADAPTIVE POLICY SELECTOR (novel)
-│   ├── optimize.py                # Trainer (AMP + cosine LR + grad clip)
-│   └── train.py                   # Closed-loop pipeline (collect + evaluate)
+│   │   ├── data_logger.py             # HDF5 trajectory logging
+│   │   ├── plotter.py                  # Plotly 3D trajectory visualization
+│   │   ├── scripted_expert.py          # Jacobian IK expert (100% success)
+│   │   └── policy_selector.py          # ⭐ ADAPTIVE POLICY SELECTOR (novel)
+│   ├── optimize.py                    # Trainer (AMP + cosine LR + grad clip)
+│   └── train.py                       # Closed-loop pipeline (collect + evaluate)
 ├── README.md
 ├── requirements.txt
-├── PAPER_DRAFT.md                 # 4-page workshop paper draft
-└── patch_adaptive.py              # Integration script
+├── PAPER_DRAFT.md                     # Workshop paper draft
+├── VLA_Paper_Final.pdf                # Formatted paper PDF
+├── patch_adaptive.py                  # Integration script
+└── LICENSE                            # MIT
 ```
-
-## Why DDPM Fails on Deterministic Tasks
-
-DDPM's reverse process starts from random Gaussian noise and adds stochastic noise at each of 100 denoising steps. For a **deterministic task** (where each input maps to exactly ONE correct action), this stochastic variance is pure noise — it pushes the sampled action AWAY from the correct one.
-
-| | DDPM | Direct MSE |
-|---|---|---|
-| Sampling | 100-step stochastic reverse chain | 1 forward pass |
-| Output for same input | Different every time | Same every time |
-| Variance | 0.08-0.12 per component | 0 |
-| Success on deterministic task | 0-15% | 80-100% |
-
-**The diagnostic**: Compute action std on training data. If `std < 0.01`, use MSE. Otherwise, use DDPM.
 
 ## Citation
 
