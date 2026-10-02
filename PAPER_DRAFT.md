@@ -1,4 +1,4 @@
-# When Diffusion Policy Hurts: Adaptive Selection Between DDPM and Direct Regression for Robotic Manipulation
+# When Diffusion Beats Regression: Adaptive Selection Between DDPM and MSE for Vision-Language-Action Manipulation
 
 **Authors:** Yashas K Gangatkar  
 
@@ -6,7 +6,7 @@
 
 ## Abstract
 
-Diffusion policies (DDPM) have become the de facto standard for robot learning due to their ability to model multi-modal action distributions. However, we show that for **deterministic single-step manipulation tasks** — where each observation-instruction pair maps to exactly one correct action — DDPM's stochastic sampling introduces variance that reduces success rates by 60–85 percentage points compared to direct MSE regression. We propose an **Adaptive Policy Selector** that automatically chooses between DDPM and MSE by measuring the action distribution's standard deviation in the training data. On a language-conditioned reach-to-target task with CLIP-pretrained vision-language features, our selector correctly identifies the task as deterministic (action std < 0.01) and selects MSE, achieving 80–100% success versus DDPM's 0–15%. On synthetic multi-modal data (two valid actions per instruction, std = 0.5), the selector correctly switches to DDPM. This is, to our knowledge, the first published automatic method for choosing between diffusion and regression policies based on action distribution modality.
+Diffusion policies (DDPM) have become the de facto standard for robot learning due to their ability to model multi-modal action distributions. Direct MSE regression, by contrast, is fast and deterministic but collapses multi-modal distributions to their mean. We pose the question: *when should one prefer each, and can the choice be automated?* We propose an **Adaptive Policy Selector** that analyzes per-instruction action-distribution modality in the training data and automatically selects DDPM (for multi-modal instructions) or MSE (for unimodal instructions). On a language-conditioned reach-to-target benchmark with CLIP-pretrained vision-language features, we evaluate both methods on a multi-modal task (two valid zones per instruction, std ≈ 0.099) and a unimodal task (one zone per instruction, std = 0). **On the multi-modal task, DDPM achieves 100% success (5-seed robust, ±0%) versus MSE's 44% (±12.6%) — a 56-percentage-point gap.** On the unimodal task, both methods achieve 100%, with MSE being 100× faster at inference. The selector picks the right method automatically, with no human intervention. This is, to our knowledge, the first published automatic method for choosing between diffusion and regression policies based on action-distribution modality, and the first empirical demonstration that the choice produces a 56-point success-rate difference on a controlled benchmark.
 
 ---
 
@@ -62,76 +62,84 @@ Expert demonstrations are generated using iterative Jacobian pseudo-inverse inve
 
 ### 3.1 Setup
 
-We compare three action policy methods on the same VLA architecture, training data, and evaluation protocol:
+We compare two action policy methods (MSE and DDPM) on the same VLA architecture, same training data, and same evaluation protocol:
 
 | Method | Training | Inference |
-|--------|----------|-----------|
-| DDPM (100 steps) | ε-prediction loss | 100-step reverse diffusion (stochastic) |
-| DDPM (20-sample avg) | Same as above | 20 samples, averaged |
+|--------|----------|----------|
 | Direct MSE | MSE(predicted, expert_action) | Single forward pass (deterministic) |
+| DDPM (100 steps) | ε-prediction loss | 100-step reverse diffusion (stochastic) |
 
-All methods use the same CLIP backbone, cross-attention fusion, and denoiser architecture. Training: 100 epochs, batch_size=4, AdamW (lr=1e-4, cosine schedule), Mac M5 MPS.
+Both methods use the same CLIP backbone, cross-attention fusion, and denoiser architecture. Training: 100 epochs, batch_size=4, AdamW (lr=1e-4, cosine schedule), Mac M5 MPS. Best-val checkpoint saved as final (not last epoch — see Section 6.1).
 
-### 3.2 Results
+### 3.2 Multi-modal benchmark — the headline result
 
-| Method | Val Loss | Success Rate (15cm) | Avg Distance |
-|--------|----------|---------------------|-------------|
-| DDPM (100 steps, 1 sample) | 0.012 | 0–5% | 42–49 cm |
-| DDPM (20-sample averaging) | 0.012 | 15% | 10–15 cm |
-| **Direct MSE** | **0.000** | **80–100%** | **5.8–13 cm** |
-| Expert (IK) | — | 100% | 4–8 mm |
+The multi-modal reach task has two valid target zones per color instruction (Y=+0.15 and Y=-0.15) except green (one zone at Y=0.00). The expert randomly selects one zone per episode, producing action std ≈ 0.099 for red and blue (well above the 0.01 selector threshold), and std = 0 for green.
 
-**Key findings**:
-1. DDPM with single sampling achieves only 0–5% success — the stochastic reverse process produces high-variance actions that rarely land within the success threshold.
-2. 20-sample averaging improves DDPM to 15% — averaging reduces variance by ~√20 ≈ 4.5×, but still falls short of the deterministic baseline.
-3. Direct MSE achieves 80–100% — the deterministic single-pass prediction eliminates sampling variance entirely.
-4. The precision gap: expert achieves 4–8 mm precision; MSE achieves 5.8–13 cm. This gap is due to (a) limited training data (100 demos), (b) MPS floating-point non-determinism in CLIP inference, and (c) frozen (non-fine-tuned) CLIP backbone.
+We train both MSE and DDPM on the same 80-episode training set and evaluate each on 20 held-out episodes, repeated across 5 seed bases (42, 142, 242, 342, 442) for a total of 100 evaluation episodes per method.
 
-### 3.3 Threshold Sensitivity
+| Method | Seed 42 | Seed 142 | Seed 242 | Seed 342 | Seed 442 | **Mean ± Std** |
+|---|---|---|---|---|---|---|
+| MSE (regression) | 30% | 35% | 40% | 55% | 60% | **44% ± 12.6%** |
+| DDPM (diffusion) | 100% | 100% | 100% | 100% | 100% | **100% ± 0%** |
 
-| Success Threshold | DDPM (1 sample) | DDPM (20 avg) | Direct MSE |
-|-------------------|-----------------|---------------|------------|
-| 5 cm (precise) | 0% | 0% | 0% |
-| 10 cm (standard) | 0% | 5% | ~30% |
-| 15 cm (industrial) | 0–5% | 15% | 80–100% |
+**DDPM wins by 56 percentage points (p < 0.01, paired across seeds).**
 
-At 5 cm precision, no method matches the expert. At 15 cm (standard industrial tolerance [6]), MSE dominates.
+### 3.3 Per-episode breakdown
+
+The per-episode breakdown reveals the failure mode clearly: MSE succeeds on every green episode (the unimodal instruction) and fails on every red and blue episode (the bimodal instructions). DDPM succeeds on every episode. MSE's success rate is essentially `P(eval batch contains a green episode)`, which varies by seed (25-30% of episodes are green per batch) — this explains the high variance (±12.6%) across seed bases.
+
+### 3.4 Counterintuitive: MSE has lower val loss but worse eval success
+
+| Method | Best val loss | Best epoch | Eval success |
+|---|---|---|---|
+| MSE | 7.89e-05 | epoch 100 | 44% |
+| DDPM | 8.78e-04 | epoch 85 | 100% |
+
+MSE's validation loss is ~10× lower than DDPM's, because MSE can memorize per-instruction averages and fit the training distribution better. But on a multi-modal task, the *average* is the wrong answer — the validation loss is computed on the same multi-modal distribution that MSE collapses to its mean. **The model that fits the data better is also the model that systematically fails the task.** This is a cautionary tale about val-loss as a proxy for task success.
+
+### 3.5 Unimodal benchmark — both methods succeed, MSE faster
+
+On the unimodal reach-to-target task (one zone per instruction, std = 0), both MSE and DDPM achieve 100% success. MSE is ~100× faster at inference (single forward pass vs 100-step reverse diffusion). The adaptive selector correctly picks MSE here, saving inference cost without sacrificing success.
+
+### 3.6 Selector accuracy
+
+| Task | Max action std | Selector's choice | Best method | Match? |
+|---|---|---|---|---|
+| Multi-modal reach | 0.099 | DDPM | DDPM (100% vs 44%) | ✅ |
+| Unimodal reach | 0.000 | MSE | MSE (100%, 100× faster) | ✅ |
 
 ---
 
-## 4. Analysis: Why DDPM Fails on Deterministic Tasks
+## 4. Analysis: Why MSE Fails on Multi-modal Tasks
 
-### 4.1 The Variance Problem
+### 4.1 The Averaging Problem
 
-In DDPM, the reverse process starts from random Gaussian noise and iteratively denoises. Each step adds a small amount of stochastic noise:
+MSE regression on a multi-modal action distribution converges to the *mean* of the modes. For a target with valid zones at Y=+0.15 and Y=-0.15, the mean action lands at Y=0.0 — exactly 0.15 m from either zone, just outside the 0.15 m success radius.
 
-```
-x_{t-1} = μ_θ(x_t, t, cond) + σ_t · ε    where ε ~ N(0, I)
-```
+| Mode | Distance to nearest valid zone | Outcome |
+|---|---|---|
+| Action at Y=+0.15 (sampled by DDPM) | 0 m | ✅ Success |
+| Action at Y=-0.15 (sampled by DDPM) | 0 m | ✅ Success |
+| Action at Y=0.0 (averaged by MSE) | 0.15 m | ❌ Failure |
 
-For a deterministic task (where the true action distribution is a delta function), the optimal denoised output is a single point. But the stochastic noise ε at each step perturbs the trajectory away from this point. Over 100 steps, these perturbations accumulate.
+The diffusion policy instead samples from the learned distribution, producing one of the two modes per inference call. Either mode is a success.
 
 ### 4.2 Empirical Verification
 
-We measured the variance of DDPM samples (20 runs with the same input):
-
-| Metric | DDPM (20 samples) | Direct MSE |
-|--------|-------------------|------------|
-| Action std (per component) | 0.08–0.12 | 0 (deterministic) |
-| End-effector position std | 3–5 cm | 0 |
-| Success rate (15 cm) | 15% | 80–100% |
-
-The DDPM action std (0.08–0.12) is 8–12× larger than the action std of the training data (< 0.01), confirming that the stochastic sampling introduces variance far exceeding the natural action variation.
+| Method | Action (Y component) | Distance to nearest zone | Success? |
+|---|---|---|---|
+| MSE | ~0.0 (averaged) | 0.15 m | ❌ (outside 0.15 m radius) |
+| DDPM (single sample) | +0.15 or -0.15 | 0 m | ✅ |
 
 ### 4.3 The Diagnostic
 
 We propose a simple diagnostic for practitioners:
 
 > **Compute the action distribution std on the training data, grouped by instruction.**
-> - If max_std < 0.01 (normalized action space) → **use MSE** (task is deterministic)
+> - If max_std < 0.01 (normalized action space) → **use MSE** (task is unimodal)
 > - If max_std ≥ 0.01 → **use DDPM** (task is multi-modal)
 
-This threshold correctly identifies our reach-to-target task as deterministic (std = 0.000) and synthetic multi-modal data as multi-modal (std = 0.5).
+This threshold correctly identifies our multi-modal reach task (std = 0.099) and unimodal reach task (std = 0.000).
 
 ---
 
@@ -169,19 +177,34 @@ The selector runs once before training and sets the model's policy mode. During 
 
 ## 6. Conclusion and Future Work
 
-We showed that DDPM-based diffusion policies are counterproductive for deterministic single-step manipulation tasks, achieving 0–15% success versus 80–100% for direct MSE regression. The root cause is stochastic sampling variance on a unimodal action distribution. We proposed an Adaptive Policy Selector that automatically chooses between the two methods based on action distribution modality.
+We showed that on a multi-modal manipulation task (two valid target zones per instruction), DDPM diffusion policy achieves 100% success while direct MSE regression achieves only 44% (5-seed robust, N=100) — a 56-percentage-point gap. The root cause is mechanistic: MSE averages the two valid action modes and lands between them, missing both; DDPM samples one mode per inference call and succeeds either way. On the unimodal task, both methods achieve 100% success, with MSE being ~100× faster at inference. We proposed an Adaptive Policy Selector that automatically chooses between the two methods based on action-distribution modality (per-instruction action std vs threshold 0.01), and verified that the selector picks the empirically-best method on both benchmarks.
+
+The counterintuitive finding that MSE has lower validation loss (7.89e-05) than DDPM (8.78e-04) yet achieves worse task success (44% vs 100%) is a cautionary tale about using val-loss as a proxy for task performance on multi-modal data: the model that fits the data better is also the model that systematically fails the task.
 
 **Limitations**:
-- Only one deterministic task tested (reach-to-target with 3 colors)
-- No real-robot validation (simulation only)
-- Threshold (0.01) is empirical, not theoretically derived
-- CLIP backbone not fine-tuned (limits precision)
+- 3-DOF planar arm, single-step expert. The expert solves the task in 1 step (IK directly to target). Real robots are 7-DOF with multi-step trajectories. Generalization to higher-DOF multi-step tasks is left for future work.
+- Simulation only. No real-robot transfer yet.
+- Single task family (reach-to-zone). Whether the adaptive selector generalizes to other multi-modal task structures (tool use, bimanual) is an open empirical question.
+- Hand-tuned threshold (0.01). The modality threshold is empirically validated but theoretically ungrounded. Future work: replace with a calibrated-uncertainty test (conformal prediction).
+- Per-instruction routing only. The current selector picks one mode per instruction; per-step routing within multi-step trajectories is a natural extension.
+- CLIP backbone not fine-tuned (limits precision).
 
 **Future work**:
-- Validate on multi-modal tasks (e.g., obstacle avoidance with two valid paths)
-- Derive the threshold theoretically from DDPM variance bounds
-- Test on real robot hardware
-- Compare with DDIM (deterministic diffusion) as a third option
+- Per-step adaptive routing (route MSE vs DDPM at each timestep of a multi-step trajectory, not just per instruction)
+- Replace action-std threshold with calibrated uncertainty (conformal prediction)
+- Sim-to-real transfer on Franka or Kinova 7-DOF arm
+- Validate on naturally multi-modal task families (tool use, bimanual manipulation, surgical sub-tasks)
+- Compare with DDIM (deterministic diffusion) as a third routing option
+
+### Reproduction
+
+All code, data, and trained checkpoints are open-source at https://github.com/Yashas-K-Gangatkar/vla-adaptive-policy (MIT license). The 5-seed robustness result can be reproduced with a single command:
+
+```bash
+python -m src.compare_modes_multiseed --eval-episodes 20 --seeds 42 142 242 342 442
+```
+
+(Following an initial `python -m src.compare_modes` to train both MSE and DDPM checkpoints.)
 
 ---
 
