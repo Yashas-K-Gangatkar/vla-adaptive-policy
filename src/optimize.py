@@ -39,6 +39,7 @@ from torch.utils.data import DataLoader, Dataset
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from src.models.vla_network import ProductionVLA  # noqa: E402
+from src.utils.policy_selector import PolicySelector  # noqa: E402
 
 
 # -----------------------------------------------------------------------------
@@ -100,6 +101,7 @@ class VLAImitationTrainer:
         checkpoint_dir: str = "checkpoints",
         project_name: str = "vla-push-block",
         use_wandb: bool = True,
+        force_mode: Optional[str] = None,
     ):
         # Device selection: CUDA > MPS > CPU
         if torch.cuda.is_available():
@@ -125,6 +127,26 @@ class VLAImitationTrainer:
         n_trainable = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         n_total = sum(p.numel() for p in self.model.parameters())
         print(f"[TRAINER] trainable params: {n_trainable/1e6:.1f}M / total {n_total/1e6:.1f}M")
+
+        # === ADAPTIVE POLICY SELECTION ===
+        # Analyze training data: if action std per instruction is low (unimodal),
+        # select MSE (deterministic, fast). If high (multimodal), select DDPM.
+        # Without this, the model defaults to "auto" which routes to MSE even
+        # for multimodal tasks — defeating the paper's main contribution.
+        if force_mode is not None:
+            # Manual override (for A/B testing) — skip the selector and use
+            # the user-specified mode directly. Still print the selector's
+            # analysis so the user can see what auto-mode would have picked.
+            selector = PolicySelector(threshold=0.01, verbose=True)
+            selector.analyze(train_h5)
+            selected_mode = force_mode
+            print(f"[TRAINER] AUTO would have picked: {selector.mode.upper()}")
+            print(f"[TRAINER] FORCED policy mode: {selected_mode.upper()}")
+        else:
+            selector = PolicySelector(threshold=0.01, verbose=True)
+            selected_mode = selector.analyze(train_h5)
+            print(f"[TRAINER] Selected policy mode: {selected_mode.upper()}")
+        self.model.policy_mode = selected_mode
 
         # Optimizer + scheduler
         self.optimizer = optim.AdamW(
@@ -178,6 +200,15 @@ class VLAImitationTrainer:
     def train(self) -> Dict[str, List[float]]:
         history = {"train_loss": [], "val_loss": []}
         best_val = float("inf")
+        # BUG FIX (reviewer round 2): Track the best-val checkpoint path so
+        # we can copy it to vla_final.pt at the end. Without this, the final
+        # checkpoint was always the LAST epoch, even when an earlier epoch
+        # had significantly lower val loss. This is why DDPM got 45% in the
+        # first re-run: best val was 0.0517 at epoch 34, but vla_final.pt
+        # was overwritten with epoch 100's val_loss=0.1745.
+        self._best_ckpt_path = None
+        self._best_val = float("inf")
+        self._best_epoch = -1
 
         for epoch in range(self.epochs):
             t0 = time.time()
@@ -234,11 +265,14 @@ class VLAImitationTrainer:
                 history["val_loss"].append(val_loss)
                 if val_loss < best_val:
                     best_val = val_loss
+                    self._best_val = val_loss
+                    self._best_epoch = epoch + 1
                     ckpt_path = os.path.join(
                         self.checkpoint_dir,
                         f"vla_epoch{epoch+1:03d}_val{val_loss:.4f}.pt",
                     )
                     self._save_checkpoint(ckpt_path)
+                    self._best_ckpt_path = ckpt_path
 
             elapsed = time.time() - t0
             lr_now = self.scheduler.get_last_lr()[0]
@@ -257,9 +291,36 @@ class VLAImitationTrainer:
                     "lr": lr_now,
                 })
 
-        # Save final model (only trainable params — see _save_checkpoint)
+        # BUG FIX (reviewer round 2): Save the BEST-val checkpoint as
+        # vla_final.pt, not the last one. Previous code overwrote vla_final.pt
+        # with the LAST epoch's weights — even if an earlier epoch had a
+        # significantly lower val_loss. For DDPM, this meant evaluating with
+        # val_loss=0.1745 (epoch 100) instead of 0.0517 (epoch 34).
         final_path = os.path.join(self.checkpoint_dir, "vla_final.pt")
-        self._save_checkpoint(final_path)
+        if self._best_ckpt_path is not None and os.path.exists(self._best_ckpt_path):
+            import shutil
+            shutil.copyfile(self._best_ckpt_path, final_path)
+            print(f"\n[TRAINER] vla_final.pt = BEST checkpoint "
+                  f"(val_loss={self._best_val:.4f} from epoch {self._best_epoch})")
+            print(f"[TRAINER] (NOT the last epoch — that had val_loss={val_loss:.4f})")
+        else:
+            self._save_checkpoint(final_path)
+            print(f"\n[TRAINER] vla_final.pt = last checkpoint (no val set)")
+
+        # Also save a small metadata file so the evaluator knows which mode
+        # was selected (mse or ddpm) and which diffusion_steps the model was
+        # trained with. Without this, the evaluator defaults to MSE + 20
+        # timesteps, which silently breaks DDPM inference.
+        meta_path = os.path.join(self.checkpoint_dir, "vla_final_meta.json")
+        with open(meta_path, "w") as f:
+            json.dump({
+                "policy_mode": getattr(self.model, "policy_mode", "auto"),
+                "diffusion_steps": getattr(self.model, "diffusion_steps", 100),
+                "best_val_loss": self._best_val,
+                "best_epoch": self._best_epoch,
+                "final_val_loss": val_loss if not (val_loss != val_loss) else None,
+                "final_epoch": self.epochs,
+            }, f, indent=2)
 
         if self.wandb:
             self.wandb.finish()
@@ -333,6 +394,9 @@ def main() -> int:
     parser.add_argument("--checkpoint-dir", default="checkpoints")
     parser.add_argument("--no-wandb", action="store_true",
                         help="Disable wandb logging")
+    parser.add_argument("--force-mode", choices=["mse", "ddpm"], default=None,
+                        help="Override auto-selection. Use 'mse' or 'ddpm' "
+                             "to force a specific policy mode (for A/B testing).")
     args = parser.parse_args()
 
     all_h5 = _gather_h5(args.data_dir)
@@ -357,6 +421,7 @@ def main() -> int:
         epochs=args.epochs,
         checkpoint_dir=args.checkpoint_dir,
         use_wandb=not args.no_wandb,
+        force_mode=args.force_mode,
     )
     history = trainer.train()
 

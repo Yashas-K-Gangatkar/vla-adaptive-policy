@@ -43,6 +43,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from src.models.vla_network import ProductionVLA  # noqa: E402
 from src.simulation.mujoco_env import PushBlockVLAEnv  # noqa: E402
+from src.simulation.mujoco_env_multimodal import MultiModalVLAEnv, multimodal_expert_action  # noqa: E402
 from src.utils.data_logger import ProductionDataLogger  # noqa: E402
 from src.utils.plotter import render_trajectory_analytics  # noqa: E402
 from src.utils.scripted_expert import scripted_expert_action  # noqa: E402
@@ -64,20 +65,24 @@ def collect_data(
     max_steps_per_episode: int,
     out_dir: str,
     seed: int = 0,
+    multimodal: bool = False,
 ) -> List[str]:
-    """Collect n_episodes of random-policy demonstrations.
+    """Collect n_episodes of expert demonstrations.
 
     Returns list of saved HDF5 file paths.
 
-    NOTE: Random-policy data is fine for testing the pipeline end-to-end,
-    but a real VLA needs expert demonstrations. For T036 (industrial
-    material handling), replace this with:
-      (a) Teleop from a real xArm or KUKA via ROS2, OR
-      (b) A scripted motion-planning expert (MoveIt + OMPL), OR
-      (c) RL fine-tuning on top of the random-data pretrained model.
+    If multimodal=True, uses MultiModalVLAEnv (each color has 2 valid zones,
+    creating bimodal action distribution). Otherwise uses the unimodal
+    PushBlockVLAEnv (one zone per color, deterministic expert).
     """
-    env = PushBlockVLAEnv(render_mode="rgb_array", seed=seed,
-                          max_steps=max_steps_per_episode)
+    if multimodal:
+        env = MultiModalVLAEnv(render_mode="rgb_array", seed=seed,
+                               max_steps=max_steps_per_episode)
+        expert_fn = multimodal_expert_action
+    else:
+        env = PushBlockVLAEnv(render_mode="rgb_array", seed=seed,
+                              max_steps=max_steps_per_episode)
+        expert_fn = scripted_expert_action
     rng = np.random.default_rng(seed)
     saved_paths: List[str] = []
     os.makedirs(out_dir, exist_ok=True)
@@ -90,14 +95,12 @@ def collect_data(
         success = False
 
         for step in range(max_steps_per_episode):
-            # Use the SCRIPTED EXPERT (Jacobian IK + quasi-static control)
-            # to generate expert demonstrations. The expert solves the
-            # reach-to-target task on step 1 (100% success rate), so each
-            # episode records one expert action that the VLA will learn
-            # to imitate. The VLA learns (image, instruction) -> expert_action.
-            action = scripted_expert_action(env, obs, info)
-            # BUG FIX (reviewer): Save PRE-step image (what the VLA sees BEFORE acting).
-            # Previously saved post-step image (arm already at target) → data leakage.
+            # Use the SCRIPTED EXPERT to generate expert demonstrations.
+            # For the unimodal env: IK solve to the single target zone.
+            # For the multimodal env: IK solve to the randomly-selected zone.
+            # In both cases the expert solves the task on step 1, so each
+            # episode records one expert action that the VLA learns to imitate.
+            action = expert_fn(env, obs, info)
             pre_image = obs["image"].copy()
             pre_ee = obs["end_effector"].copy()
             pre_blocks = obs["block_positions"].copy()
@@ -141,32 +144,54 @@ def evaluate(
     max_steps_per_episode: int,
     out_dir: str,
     seed: int = 0,
+    multimodal: bool = False,
 ) -> List[str]:
-    """Roll out the trained policy and save trajectories + plots."""
+    """Roll out the trained policy and save trajectories + plots.
+
+    If multimodal=True, evaluates on MultiModalVLAEnv (2 valid zones per
+    color). Otherwise evaluates on PushBlockVLAEnv (unimodal).
+    """
     if not os.path.exists(checkpoint):
         raise FileNotFoundError(f"Checkpoint not found: {checkpoint}")
 
     device = _device()
     print(f"[EVAL] device = {device}")
 
-    env = PushBlockVLAEnv(render_mode="rgb_array", seed=seed,
-                          max_steps=max_steps_per_episode)
-    model = ProductionVLA(action_dim=3, diffusion_steps=20).to(device)
-    # Use inference-time fewer steps (DDPM scheduler is configurable)
-    # but DDPMScheduler.timesteps is fixed at construction, so rebuild:
-    from diffusers import DDPMScheduler
-    model.noise_scheduler = DDPMScheduler(
-        num_train_timesteps=20,
-        beta_schedule="squaredcos_cap_v2",
-        prediction_type="epsilon",
-    )
+    # BUG FIX (reviewer round 2): Read training metadata so we use the
+    # SAME diffusion_steps and policy_mode the model was trained with.
+    # Previously this was hardcoded to diffusion_steps=20 and policy_mode
+    # was left at the default "auto" (=MSE), which silently broke DDPM
+    # inference: the scheduler used 20 timesteps but the model's time
+    # embedding was trained on 100, AND the forward pass routed to MSE
+    # instead of DDPM. This made every DDPM checkpoint look broken.
+    meta_path = os.path.join(os.path.dirname(checkpoint), "vla_final_meta.json")
+    meta = {}
+    if os.path.exists(meta_path):
+        import json
+        with open(meta_path) as f:
+            meta = json.load(f)
+        print(f"[EVAL] loaded metadata: {meta}")
+    diffusion_steps = int(meta.get("diffusion_steps", 100))
+    policy_mode = meta.get("policy_mode", "auto")
+
+    if multimodal:
+        env = MultiModalVLAEnv(render_mode="rgb_array", seed=seed,
+                               max_steps=max_steps_per_episode)
+    else:
+        env = PushBlockVLAEnv(render_mode="rgb_array", seed=seed,
+                              max_steps=max_steps_per_episode)
+    # BUG FIX (reviewer round 2): Use diffusion_steps=100 (match training).
+    # The previous hardcoded 20 was a silent train/inference mismatch.
+    model = ProductionVLA(action_dim=3, diffusion_steps=diffusion_steps).to(device)
+    # Set policy mode from metadata (not from re-analyzing data, which was
+    # a bug: re-analysis used the unimodal sim_logs and would overwrite a
+    # DDPM checkpoint's mode with MSE).
+    model.policy_mode = policy_mode
+    print(f"[EVAL] policy_mode={policy_mode} | diffusion_steps={diffusion_steps}")
     # Load only the trainable params (checkpoints store denoiser + projections
-    # + cross-attention, NOT the frozen CLIP weights — see VLAImitationTrainer._save_checkpoint)
+    # + cross-attention, NOT the frozen CLIP weights)
     state = torch.load(checkpoint, map_location=device, weights_only=True)
-    # strict=False because the checkpoint does not contain CLIP weights
-    # (they are always reloaded from HuggingFace at model init)
     missing, unexpected = model.load_state_dict(state, strict=False)
-    # Report what was loaded (helps debug checkpoint/version mismatches)
     n_loaded = len(state)
     print(f"[EVAL] loaded {n_loaded} tensors from checkpoint; "
           f"missing in checkpoint: {len(missing)} (expected — frozen CLIP weights)")
@@ -261,6 +286,10 @@ def main() -> int:
     parser.add_argument("--data-dir", default="data/sim_logs")
     parser.add_argument("--eval-dir", default="data/eval_runs")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--multimodal", action="store_true",
+                        help="Use the multi-modal env (2 valid zones per color). "
+                             "Use this for both --collect-only and --evaluate "
+                             "when working with the multi-modal task.")
     args = parser.parse_args()
 
     if args.collect_only:
@@ -269,6 +298,7 @@ def main() -> int:
             max_steps_per_episode=args.max_steps,
             out_dir=args.data_dir,
             seed=args.seed,
+            multimodal=args.multimodal,
         )
         print(f"\n[COLLECT] Done. {args.episodes} episodes saved to {args.data_dir}/")
         print("Next: train the VLA with `python -m src.optimize --epochs 50`")
@@ -283,6 +313,7 @@ def main() -> int:
             max_steps_per_episode=args.max_steps,
             out_dir=args.eval_dir,
             seed=args.seed,
+            multimodal=args.multimodal,
         )
     return 0
 
