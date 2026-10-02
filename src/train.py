@@ -96,15 +96,20 @@ def collect_data(
             # episode records one expert action that the VLA will learn
             # to imitate. The VLA learns (image, instruction) -> expert_action.
             action = scripted_expert_action(env, obs, info)
+            # BUG FIX (reviewer): Save PRE-step image (what the VLA sees BEFORE acting).
+            # Previously saved post-step image (arm already at target) → data leakage.
+            pre_image = obs["image"].copy()
+            pre_ee = obs["end_effector"].copy()
+            pre_blocks = obs["block_positions"].copy()
             obs, reward, terminated, truncated, info = env.step(action)
             logger.record_step(
                 step_idx=step,
-                image_frame=obs["image"],
+                image_frame=pre_image,
                 instruction=instruction,
                 action_torque=action,
-                end_effector_pos=obs["end_effector"],
-                reward=reward,
-                block_positions=obs["block_positions"],
+                end_effector_pos=pre_ee,
+                reward=0.0,
+                block_positions=pre_blocks,
             )
             total_reward += reward
             if terminated:

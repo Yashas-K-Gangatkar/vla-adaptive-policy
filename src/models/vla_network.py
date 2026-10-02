@@ -146,7 +146,10 @@ class ConditionalActionDenoiser(nn.Module):
 
         self.norm_out = nn.LayerNorm(hidden_dim)
         self.out_proj = nn.Linear(hidden_dim, action_dim)
-        self.act_out = nn.Tanh()  # bounded noise prediction helps stability
+        # BUG FIX (reviewer): Removed Tanh — ε (noise) is unbounded Gaussian.
+        # Clamping ε to [-1,1] breaks DDPM denoising. For MSE mode, action
+        # bounding is handled in ProductionVLA.forward if needed.
+        self.act_out = nn.Identity()
 
     def forward(
         self,
@@ -164,7 +167,7 @@ class ConditionalActionDenoiser(nn.Module):
         for block in self.blocks:
             x = block(x, cond_combined)
         x = self.norm_out(x)
-        return self.act_out(self.out_proj(x))                 # (B, action_dim)
+        return self.out_proj(x)  # (B, action_dim) — no activation
 
 
 class ProductionVLA(nn.Module):
@@ -246,15 +249,23 @@ class ProductionVLA(nn.Module):
             padding=True, truncation=True, max_length=77,
         )
         tokens = {k: v.to(self.text_encoder.device) for k, v in tokens.items()}
-        with torch.no_grad():
-            txt_out = self.text_encoder(**tokens).last_hidden_state  # (B, L, 512)
+        # BUG FIX (reviewer): Only use no_grad if CLIP text is frozen.
+        # If unfrozen, gradients must flow through the text encoder.
+        if not any(p.requires_grad for p in self.text_encoder.parameters()):
+            with torch.no_grad():
+                txt_out = self.text_encoder(**tokens).last_hidden_state
+        else:
+            txt_out = self.text_encoder(**tokens).last_hidden_state
         return self.txt_proj(txt_out)  # (B, L, 256)
 
     def encode_vision(self, image_batch: torch.Tensor) -> torch.Tensor:
         """image_batch: (B, 3, 224, 224) in [0, 1]. Returns (B, 50, 256)."""
-        with torch.no_grad():
+        # BUG FIX (reviewer): Only use no_grad if CLIP vision is frozen.
+        if not any(p.requires_grad for p in self.vision_encoder.parameters()):
+            with torch.no_grad():
+                vis_out = self.vision_encoder(pixel_values=image_batch).last_hidden_state
+        else:
             vis_out = self.vision_encoder(pixel_values=image_batch).last_hidden_state
-            # (B, 50, 768) for ViT-B/32 with 224x224 input
         return self.vis_proj(vis_out)  # (B, 50, 256)
 
     def fuse(self, vis_feats: torch.Tensor, txt_feats: torch.Tensor) -> torch.Tensor:
@@ -301,7 +312,7 @@ class ProductionVLA(nn.Module):
                 loss = F.mse_loss(predicted, action_gt)
                 return {"loss": loss, "predicted_noise": predicted}
 
-            return {"action": torch.tanh(predicted) * self.action_scale}
+            return {"action": predicted * self.action_scale}
         else:
             # DDPM diffusion (stochastic, best for multimodal tasks)
             if return_loss and action_gt is not None:
@@ -316,8 +327,10 @@ class ProductionVLA(nn.Module):
                 loss = F.mse_loss(predicted_noise, noise)
                 return {"loss": loss, "predicted_noise": predicted_noise}
 
+            # BUG FIX (reviewer): Remove reversed() — diffusers already stores timesteps
+            # in descending order [T-1, T-2, ..., 0]. Using reversed() goes 0→T-1 (WRONG).
             action = torch.randn(B, self.action_dim, device=device)
-            for t in reversed(self.noise_scheduler.timesteps.tolist()):
+            for t in self.noise_scheduler.timesteps.tolist():
                 t_tensor = torch.full(
                     (B,), t, device=device, dtype=torch.long,
                 )
@@ -325,7 +338,9 @@ class ProductionVLA(nn.Module):
                 action = self.noise_scheduler.step(
                     model_out, t, action,
                 ).prev_sample
-            return {"action": torch.tanh(action) * self.action_scale}
+            # BUG FIX (reviewer): No extra tanh — DDPM scheduler output is already
+            # the denoised action. Extra tanh compresses the output range.
+            return {"action": action * self.action_scale}
 
     # -----------------------------------------------------------------
     # Convenience: count parameters

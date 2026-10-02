@@ -85,9 +85,14 @@ class MultiModalVLAEnv(PushBlockVLAEnv):
         self._step_count += 1
         obs = self._get_obs()
 
-        # Reward: distance to the SELECTED zone (not just any zone of this color)
+        # BUG FIX (reviewer): Success should check ANY valid zone, not just the selected one.
+        # The model doesn't know which zone was randomly selected — both are valid targets.
         ee_pos = obs["end_effector"]
-        dist = float(np.linalg.norm(ee_pos - self._target_zone_pos))
+        color = self._current_color
+        valid_zones = MULTIMODAL_ZONES[color]
+        # Distance to NEAREST valid zone (not just the selected one)
+        distances = [float(np.linalg.norm(ee_pos - zone)) for zone in valid_zones]
+        dist = min(distances)  # best distance across all valid zones
         reward = -dist
         success = dist < self.ZONE_RADIUS
         if success:
